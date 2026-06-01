@@ -1,0 +1,41 @@
+# REVVL 7 Pro 5G — Fastboot OEM Commands (REVVL ABL)
+# ABL = stripped, minimal OEM command surface
+# Full enum performed: 25+ commands tested, only 4 functional
+
+## Working OEM Commands
+oem device-info              → (bootloader) Verity mode: true
+                               (bootloader) Device unlocked: false
+                               (bootloader) Device critical unlocked: false
+                               (bootloader) Charger screen enabled: true
+
+oem off-mode-charge [0|1]    → OKAY (toggles off-mode charging)
+
+oem select-display-panel     → OKAY (no argument)
+
+oem permission <mode>        → FAILED (remote: 'wrong mode arg!')
+                               # T-Mobile auth gate — expects unlock token
+                               # All tested args fail: unlock, 1, get_unlock_code, token, tmo_unlock
+
+## Non-Working OEM Commands (all return "unknown command")
+oem help, get-token, get_identifier_token, deviceid, imei,
+list_partition, get_unlock_code, read_simlock, check-hw,
+show-serial, dump, get-build-var, config, gpt-info, boot-mode,
+hwid, get-hwid, enable-charger-screen, set-gpu-preemption-value
+
+## Fastboot Variables
+kernel: uefi                 # Kernel loaded via UEFI, not ABL directly
+is-userspace: no             # True bootloader mode
+snapshot-update-status: none
+parallel-download-flash: yes
+slot-count: 2
+current-slot: a
+max-download-size: 805306368  # 768MB
+
+## Unsupported Commands
+fetch <partition>            → Device does not support fetch command
+flashing get_unlock_ability  → FAILED (remote: 'permission denied, auth needed.')
+flashing unlock              → FAILED (remote: 'flashing unlock is not allowed')
+
+## Conclusion
+REVVL ABL is significantly stripped compared to Xiaomi (no set-gpu-preemption-value).
+Only T-Mobile auth-gated OEM permission remains as a potential (but blocked) unlock path.

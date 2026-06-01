@@ -1,0 +1,75 @@
+# REVVL 7 Pro 5G (Pinehurst) — Fastboot Partition Table
+# Source: fastboot getvar all (sanitized)
+# Bootloader: locked, kernel:uefi, slot:a
+# Verity: true, Critical unlocked: false
+
+product=Pinehurst
+secure=yes
+hw-revision=10000
+variant=SM_UFS
+erase-block-size=0x1000
+logical-block-size=0x1000
+
+# Partition list (slot _a shown for A/B partitions)
+partition-size:super        0x240000000   # 9 GB dynamic
+partition-size:userdata     0x34C55D3000  # ~212 GB
+partition-size:rawdump      0x30C800000   # 12.5 GB
+
+# Boot chain partitions
+partition-size:xbl_a         0x380000      # XBL (1.1MB)
+partition-size:xbl_config_a  0x80000       # XBL config (512KB)
+partition-size:abl_a         0x100000      # ABL (1MB) — ENCRYPTED
+partition-size:uefi_a        0x500000      # UEFI DXE (5MB)
+partition-size:uefisecapp_a  0x200000      # UEFI Secure App (2MB)
+partition-size:boot_a        0x6000000     # boot.img (96MB)
+partition-size:vendor_boot_a 0x6000000     # vendor_boot (96MB)
+partition-size:init_boot_a   0x800000      # init_boot (8MB)
+partition-size:dtbo_a        0x1800000     # DTBO (24MB)
+partition-size:recovery_a    0x6400000     # recovery (100MB)
+
+# Firmware partitions
+partition-size:tz_a          0x400000      # TrustZone (4MB)
+partition-size:hyp_a         0x800000      # Hypervisor (8MB)
+partition-size:aop_a         0x80000       # Always-On Processor (512KB)
+partition-size:aop_config_a  0x80000       # AOP config (512KB)
+partition-size:cpucp_a       0x100000      # CPUCP (1MB)
+partition-size:shrm_a        0x20000       # SH bridge (128KB)
+partition-size:featenabler_a 0x20000       # Feature enabler (128KB)
+partition-size:devcfg_a      0x20000       # Device config (128KB)
+partition-size:qupfw_a       0x14000       # QUP firmware (80KB)
+
+# Security partitions
+partition-size:devinfo       0x1000        # Device info (4KB) — unlock state
+partition-size:uefivarstore  0x80000       # UEFI variables (512KB) — PTBL format
+partition-size:secdata       0x7000        # Security data (28KB)
+partition-size:ssd           0x2000        # Secure shared data (8KB)
+partition-size:frp           0x80000       # Factory reset protection (512KB)
+partition-size:keystore      0x80000       # Key store (512KB)
+partition-size:xbl_sc_test_mode 0x10000   # XBL test mode (64KB)
+partition-size:spunvm        0x2000000     # Secure NV (32MB)
+partition-size:rtice         0x80000       # RT integrity check (512KB)
+partition-size:tzsc          0x20000       # TZ secure channel (128KB)
+partition-size:storsec       0x20000       # Storage security (128KB)
+partition-size:dip           0x100000      # Device ID params (1MB)
+partition-size:toolsfv       0x100000      # Tools FV (1MB)
+partition-size:imagefv_a     0x200000      # Image FV (2MB)
+
+# Modem/DSP partitions
+partition-size:modem_a       0x16800000    # Modem (360MB)
+partition-size:dsp_a         0x4000000     # DSP (64MB)
+partition-size:bluetooth_a   0x500000      # Bluetooth (5MB)
+partition-size:keymaster_a   0x80000       # Keymaster (512KB)
+
+# Other
+partition-size:qweslicstore_a 0x40000      # License store (256KB)
+partition-size:persist       0x2000000     # Persist (32MB)
+partition-size:misc          0x100000      # Misc (1MB)
+partition-size:ddr           0x100000      # DDR (1MB)
+partition-size:cdt           0x20000       # CDT (128KB)
+partition-size:fsc           0x20000       # FSC (128KB)
+partition-size:fsg           0xA00000      # FSG (10MB)
+partition-size:modemst1      0x800000      # Modem storage 1 (8MB)
+partition-size:modemst2      0x800000      # Modem storage 2 (8MB)
+partition-size:spunvm        0x2000000     # SPU NVM (32MB)
+partition-size:vm-data       0x20A4000     # VM data (32MB)
+partition-size:vm-bootsys_a  0x10625000    # VM boot sys (262MB)

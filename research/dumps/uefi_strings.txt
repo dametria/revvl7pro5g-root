@@ -1,0 +1,75 @@
+# REVVL 7 Pro 5G — UEFI DXE Configuration
+# Extracted from uefi.img FV2 (decompressed, 3952648 bytes)
+# V046 and V016 are 100% IDENTICAL (0 byte diffs across 6.6MB)
+
+## Critical Security-Relevant Configuration
+
+# BDS (Boot Device Selection)
+DefaultBDSBootApp = "LinuxLoader"           # Default boot target
+
+# UEFI Shell
+EnableShell = 0x1                           # *** UEFI SHELL ENABLED IN PRODUCTION ***
+# "Enter Shell" menu option present in Boot Manager
+# Trigger mechanism unknown (buttons don't work, USB keyboard untested)
+
+# Variable Services
+AllowNonPersistentVarsInRetail = 0x1        # Non-persistent UEFI vars writable
+EnableVariablePolicyEngine = 0              # *** VARIABLE POLICY DISABLED ***
+# VariableServicesFlag = 0x10
+
+# OEM Setup
+EnableOEMSetupAppInRetail = 0x0             # Disabled but flag exists
+
+# Security
+EnableUefiSecAppDebugLogDump = 0x0          # Debug log dump disabled
+
+# Filesystem/IO
+EnableLogFsSyncInRetail = 0x1
+EnableMultiCoreFvDecompression = 1
+EnableDisplayThread = 0x1
+EnableDisplayImageFv = 0x1
+EnableSDHCSwitch = 0x1
+EnableUfsIOC = 1
+
+## Shell Strings Found
+"Enter Shell"
+"Launch the Shell, no startup script is run"
+"Label = Enter Shell"
+"SecurityToggleApp Arg = /SecureBootEnable"
+"Disable Secure Boot"
+
+## Debug Build Leak
+Debug-build path in production firmware:
+  RELEASE_CLANG120LINUX/AARCH64/QcomPkg/XBLCore/XBLCore/DEBUG/Sec.dll
+BSP: Qcom BOOT.MXF.2.0 (NetraniLAA)
+
+## DXE Module Inventory (97 total in FV2+FV3)
+
+# Critical modules present:
+- QcomBds                    # Boot Device Selection
+- Shell                      # UEFI Shell (ENABLED)
+- VerifiedBootDxe            # Android Verified Boot
+- SecureBoot (+SecurityToggleApp)
+- SecurityStubDxe
+
+# USB stack (all present):
+- UsbDxe, UsbKbDxe, UsbMassStorageDxe, XhciDxe, EhciDxe
+
+# Critical modules ABSENT:
+- VariableRuntimeDxe         # Variables integrated elsewhere
+- BootManagerMenuApp         # Menu in QcomBds
+- LinuxLoader                # Not separate module (BDS app path)
+
+## AVB Chain (from vbmeta.img)
+- Root key: RSA4096, SHA1 36afcf0e...
+- Anti-rollback bound to patch date (rollback index = unix-time)
+- Same hashtree salt reused across 6 partitions
+- Qcom firmware (ABL, XBL, TZ, UEFI) OUTSIDE AVB chain
+- Qcom uses separate MBN cert chain via PK_HASH fuse
+
+## TZ Macchiato TA (from tz.img strings)
+- "Insecure License Test Root CA1" in PRODUCTION tz.img
+- "This is signed & encrypted with insecure test keys"
+- Macchiato Fuse check at runtime
+- Protocol: ECIES-AD + SC1 + ECDSA
+- X509 extensions: HWVersion, OEMId, ServiceId

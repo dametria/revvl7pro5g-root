@@ -1,0 +1,35 @@
+# REVVL 7 Pro 5G — Build Info
+# Sanitized — no serial/IMEI
+
+# Build
+ro.build.fingerprint=T-Mobile/Pinehurst/Pinehurst:14/UKQ1.230924.001/SW_S88823AA1_V046:user/release-keys
+ro.build.version.incremental=SW_S88823AA1_V046
+ro.build.version.security_patch=2025-03-05
+ro.build.version.sdk=34
+
+# SoC
+platform=QRD
+soc_id=537
+machine=PARROT
+codename=NetraniLAA
+board_id=S88823AA1
+
+# GPU
+model=Adreno710v1
+kgsl_magic=0x09
+
+# RAM
+memtotal_kb=7640848
+
+# Kernel
+version=Linux 5.10.209-android12-9-g37a11f6fb6aa
+compiler=Android (7284624, based on r416183b) clang 12.0.5
+build_date=Wed Dec 4 04:44:06 UTC 2024
+
+# Storage
+type=UFS
+vendor=SM_
+
+# Boot
+kernel_physical_base=0xA8000000
+kernel_virtual_base=0xffffff8008000000
