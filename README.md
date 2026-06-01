@@ -1,224 +1,83 @@
-Root exploit for the Quest 3/3S for the August 7, 2025 update and earlier, based on [CVE-2025-21479](https://docs.qualcomm.com/product/publicresources/securitybulletin/june-2025-bulletin.html).
+# REVVL 7 Pro 5G — Root Exploit
 
-![screenshot of Magisk, Cheese, and Termux with a root shell](https://github.com/user-attachments/assets/14e141c0-1430-4402-b5cb-4849bd0b2bfd)
+**CVE-2025-21479** — Adreno GPU SMMU bypass → **transient root** для T-Mobile REVVL 7 Pro 5G.
 
-## Warning:
+## Устройство
 
-- Rooting is dangerous. If you brick a Quest 3/3S, there is no way to repair it.
+| Параметр | Значение |
+|----------|---------|
+| Модель | T-Mobile REVVL 7 Pro 5G (TMRV07P5G) |
+| Кодовое имя | Pinehurst |
+| SoC | Qualcomm SM6450 (Snapdragon 6 Gen 1) |
+| GPU | Adreno 710 (A7xx family) |
+| Ядро | 5.10.209-android12 |
+| Билд | V046 (SW_S88823AA1_V046, патч 2025-03-05) **уязвим** |
+| Также уязвим | V016 (A16 OTA, патч 2026-01-05) |
+| RAM | 6GB |
 
-- This disables all security when temp rooted.
-- Do NOT run apps or browse websites you don't trust.
+## Как работает
 
-- Do NOT write to the boot or system partition. You will BRICK.
-- Do NOT use Magisk's "Install" feature.
+CVE-2025-21479 (июнь 2025, Qualcomm). Adreno A7xx firmware баг: `CP_SET_DRAW_STATE` устанавливает IB_LEVEL=4 (SDS). Привилегированная команда `CP_SMMU_TABLE_UPDATE` проверяет `IB_LEVEL & 0x3 == 0`. **4 & 3 = 0 → bypass!**
 
-- You may want to back up your deviceKey, Meta Access Token and Oculus Access Token after root.
+GPU firmware думает что команда из kernel ring buffer (уровень 0), разрешает изменение SMMU page tables → arbitrary physical memory read/write → kernel memory patch → root.
 
-## Download
+## Сборка
 
-You can download an APK in the [Release](https://github.com/zhuowei/cheese/releases) section.
-
-## Guide to root
-
-See [FreeXR's guide to rooting the Quest 3/3S](https://github.com/FreeXR/eureka_panther-adreno-gpu-exploit-1).
-
-Join [FreeXR](https://discord.gg/ABCXxDyqrH)'s Discord for more information.
-
-## Supported versions
-
-- Quest 3: v79 5115411.12900.520 ([August 7, 2025](https://cocaine.trade/Quest_3_firmware)) and below, to about version v71.
-- Quest 3S: v79 117688.9900.610 ([August 6, 2025](https://cocaine.trade/Quest_3S_firmware)) and below, to about version v71.
-
-No newer versions are supported. (Older versions can be supported with more work.)
-
-## Unsupported versions
-
-Meta patched CVE-2025-21479 in these versions and any newer versions. They will NEVER be supported.
-
-- Quest 3: v79 5115411.13420.520 ([August 10, 2025](https://cocaine.trade/Quest_3_firmware))
-- Quest 3S: v79 117688.10380.610 ([August 10, 2025](https://cocaine.trade/Quest_3S_firmware))
-
-## Contains code from:
-
- - adrenaline by Project Zero
- - adreno_user from m-y-mo
- - Freedreno from Mesa
- - shellcode from Longterm Security
- - Magisk from topjohnwu and the Magisk developers.
-
-## Source
-
-This repo contains the source for the command line `cheese` executable.
-
-The [cheese-app](https://github.com/zhuowei/cheese-app) repo contains the source for the app.
-
-## Thanks
-
-This is based on other researchers' Adreno GPU writeups: this uses code from:
-- [Project Zero/Ben Hawkes's Adrenaline](https://googleprojectzero.blogspot.com/2020/09/attacking-qualcomm-adreno-gpu.html)
-- [GitHub Security/Man Yue Mo's adreno_user](https://github.blog/security/vulnerability-research/the-code-that-wasnt-there-reading-memory-on-an-android-device-by-accident/)
-- [Freedreno/Rob Clark's kilroy](https://github.com/robclark/kilroy/blob/master/kilroy.c)
-
-Additional info on Adreno GPUs' firmware, including how to diff the firmware and how the firmware works, comes from from Freedreno's [afuc documentation](https://gitlab.freedesktop.org/mesa/mesa/-/blob/c0f56fc64cad946d5c4fda509ef3056994c183d9/src/freedreno/afuc/README.rst) by Rob Clark, Connor Abbott, and other Freedreno/Turnip contributors.
-
-Thanks to the developers at XRBreak and [FreeXR](https://discord.gg/ABCXxDyqrH) for all their help and contributions.
-
-====
-
-Proof-of-concept for [CVE-2025-21479](https://docs.qualcomm.com/product/publicresources/securitybulletin/june-2025-bulletin.html), demonstrating that it only affects Adreno A7xx (Snapdragon 8 Gen 1 / XR2 Gen 2 and newer) devices.
-
-This only tests whether the device is vulnerable - getting this to actually do anything interesting would require more effort.
-
-On unpatched Adreno A7xx devices, running this should print:
-
-```
-0 0
+```bash
+# Windows NDK 27
+set NDK=C:\Users\%USERNAME%\Android\ndk\27.0.12077973
+%NDK%\toolchains\llvm\prebuilt\windows-x86_64\bin\aarch64-linux-android34-clang.cmd -o cheese cheese.c -static
 ```
 
-And if you run `adb bugreport`, in the kernel `dmesg`, you will see:
+Или: `build_win.cmd` в репозитории.
 
-```
-<2>[146532.566695][  T933] kgsl kgsl-3d0: GPU PAGE FAULT: addr = 4000031004 pid= 0 name=(null) drawctxt=1111638594 context pid = 0
-<2>[146532.566756][  T933] kgsl kgsl-3d0: context=gfx3d_user TTBR0=0x1234567841414141 (write unknown fault)
-<2>[146532.566783][  T933] kgsl kgsl-3d0: FAULTING BLOCK: CP
-```
+## Запуск
 
-On Adreno A6xx devices, running this prints:
+```bash
+adb push cheese /data/local/tmp/
+adb shell chmod 755 /data/local/tmp/cheese
 
-```
-41414141 42424242
-```
+# Способ 1 (рекомендуемый):
+adb shell CHEESE_ATTEMPT=0 /data/local/tmp/cheese id
 
-https://notnow.dev/notice/AvIZRBttG7DsDhx9hw
-
-Patched Adreno A7xx (e.g. Samsung devices after the [2025 May security update](https://security.samsungmobile.com/serviceWeb.smsb)) should also print this, but I have not tested it.
-
-# How to use
-
-```
-# adjust path to point to your Android NDK
-bash build.sh
-adb push cheese /data/local/tmp
-adb shell /data/local/tmp/cheese
+# Способ 2 (ручной spray address):
+adb shell CHEESE_PHYADDR=0xa0000000 /data/local/tmp/cheese id
 ```
 
-
-# How it works
-
-https://notnow.dev/notice/Av4sfoQjyrxogkZ6Ya
-
-This runs a command buffer on the Adreno GPU (Using a modified version of [Project Zero's Adrenaline code](https://googleprojectzero.blogspot.com/2020/09/attacking-qualcomm-adreno-gpu.html))
-
-Run `CP_SET_MODE` - this enables draw states to run immediately.
-
-Run `CP_SET_DRAW_STATE` - this sets `IB_LEVEL` to 0x4, then calls a instruction buffer.
-
-Inside the `CP_SET_DRAW_STATE`, run `CP_SMMU_TABLE_UPDATE`.
-
-Here’s the firmware handling `CP_SMMU_TABLE_UPDATE`:
+## Успешный вывод
 
 ```
-CP_SMMU_TABLE_UPDATE:
-// get IB level
-and $02, $12, 0x3
-// if not 0 (kernel ring buffer), go to CP_NOP
-brne $02, 0x0, #l1873
-<actual SMMU modify code >
+uid=0(root) gid=0(root) groups=0(root) context=u:r:shell:s0
 ```
 
-So with IB_LEVEL=4, masking 4 with 3 gives you 0, which passes the check for kernel ring buffer.
+## Параметры SM6450
 
-So you can change the pagetables and causes the GPU to error out.
+| Параметр | Значение |
+|----------|---------|
+| KGSL magic | 0x09 |
+| kgsl-3d0 ioctl CREATE | 0x09:0x13 |
+| kgsl-3d0 ioctl MAP_USER_MEM | 0x09:0x15 |
+| kgsl-3d0 ioctl GPU_COMMAND | 0x09:0x4A |
+| kernel physical base | 0xA8000000 |
+| kernel virtual base | 0xffffff8008000000 |
+| Рабочие spray-адреса | 0xfebeb000, 0xd0b3b000, 0xa0000000, 0xd5cf0000 |
 
-# How I diffed the patch
+## Ограничения
 
-I diffed several Samsung Galaxy firmwares using Freedreno's [afuc](https://gitlab.freedesktop.org/mesa/mesa/-/blob/c0f56fc64cad946d5c4fda509ef3056994c183d9/src/freedreno/afuc/README.rst) disassembler.
+- **Transient root** — живёт 10-30 секунд, затем kernel panic (SMMU page table corruption)
+- Spray-адрес вероятностный (~50% успех в зависимости от бута)
+- После kernel panic устройство автоматически перезагружается
+- Не даёт BL unlock — ABL игнорирует модифицированный devinfo на данном устройстве
 
-The Galaxy S24 firmware was the most helpful, since its GPU firmware only differs by one version - the security fix:
+## Безопасность
 
-https://notnow.dev/notice/AuueszvUVUQnWqMQeO
+- **НЕ ПИСАТЬ** в boot или system разделы — BRICK
+- **НЕ ИСПОЛЬЗОВАТЬ** Magisk "Install" кнопку — BRICK
+- `CHEESE_ATTEMPT` и `CHEESE_PHYADDR` не деструктивны — можно пробовать многократно
 
-https://notnow.dev/notice/Av0kDfOUPKhqHyjyxE
+## Благодарности
 
-Galaxy S24 firmware: `gen70900_sqe.fw`
-- April update (S921USQU4BYD9): v675
-- May update (S921USQS4BYE4): v676
-
-https://notnow.dev/notice/Av0a7wUouVSa3EKkE4
-
-Diffing Galaxy S24 Adreno firmware between v675 and v676 shows one type of diff:
-
-```diff
-        0163: b80300a4  CP_ME_INIT:
-        0163: b80300a4  fxn355:
-        0163: b80300a4  cread $03, [$00 + 0x0a4]
--       0164: 2a440003  and $04, $12, 0x3
-+       0164: 2a440007  and $04, $12, 0x7
-        0165: 98641813  ushr $03, $03, $04
-        0166: c860004a  brne $03, b0, #l432
-        0167: 01000000  nop
-```
-Every access to `$12` now ANDs with `0x7` instead of `0x3`. There are no other changes.
-
-https://gist.github.com/zhuowei/46a68b9ee53589cdeaa40c11d15d895f
-
-Register $12 seems to be the IB level:
-https://gitlab.freedesktop.org/mesa/mesa/-/blob/c0f56fc64cad946d5c4fda509ef3056994c183d9/src/freedreno/afuc/README.rst#id23
-https://gitlab.freedesktop.org/mesa/mesa/-/blob/c0f56fc64cad946d5c4fda509ef3056994c183d9/src/freedreno/afuc/README.rst#id29
-
-Which selects which queue of draw commands will be read.
-https://gitlab.freedesktop.org/mesa/mesa/-/blob/c0f56fc64cad946d5c4fda509ef3056994c183d9/src/freedreno/afuc/README.rst#id31
-
-The Adreno 7xx hardware supports 5 queues (RB (kernel ringbuffer, priviledged), IB1, IB2, IB3, or SDS):
-https://cs.android.com/android/platform/superproject/main/+/main:external/mesa3d/src/freedreno/registers/adreno/adreno_control_regs.xml;l=327;drc=c0867f48117dc2c18b1ae689235cb1f60b237600
-
-https://notnow.dev/notice/Av0kDfOUPKhqHyjyxE
-
-I think this diff is CVE-2025-21479.
-It looks like it only affects Adreno A7xx devices (Snapdragon 8 Gen 1 and above).
-Maybe the [Qualcomm bulletin](https://docs.qualcomm.com/product/publicresources/securitybulletin/june-2025-bulletin.html#_cve-2025-21479) is wrong?
-
-- A6xx has 4 IB levels: RB, IB1, IB2, and SDS: SDS=0x3
-- A7xx adds IB3: now there are 5 IB levels: RB, IB1, IB2, IB3, and SDS=0x4.
-- SDS is now 0x4, so masking with 0x3 would give 0x0.
-
-
-I'm guessing, on an Adreno A7xx device:
-- if you could somehow execute commands at IB level 4 (SDS) with `CP_SET_DRAW_STATE`
-- and find a command that checks for IB level = RB (kernel-provided ring buffer), such as `CP_SMMU_TABLE_UPDATE`
-- you can trick it into bypassing the check
-
----
-
-According to the [Project Zero blog post](https://googleprojectzero.blogspot.com/2020/09/attacking-qualcomm-adreno-gpu.html), the `CP_INDIRECT_BUFFER` instruction calls an indirect buffer of control processor instructions, 
-
-When an app wants to use the GPU, the kernel's RB (kernel ring buffer) will contain a `CP_INDIRECT_BUFFER` command that calls a user provided Indirect Buffer- IB1. 
-This user buffer can call its own indirect buffers: IB2.
-On A7xx, there's also IB3.
-
-Additionally, on both A6xx and A7xx, there's SDS, which isn't entered by indirect buffer, but by `CP_SET_DRAW_STATE`.
-
-https://cs.android.com/android/platform/superproject/+/android15-qpr2-release:external/mesa3d/src/freedreno/decode/cffdec.c;l=3030;drc=0dc791ed57dacf9fe3df694d7f285a8d9f942fa7
-https://cs.android.com/android/platform/superproject/+/android15-qpr2-release:external/mesa3d/src/freedreno/decode/cffdec.c;l=2283;drc=0dc791ed57dacf9fe3df694d7f285a8d9f942fa7
-
-A6xx has RB, IB1, IB2, and SDS.
-`CP_SET_DRAW_STATE` sets IB level to 0x3: in `a650_sqe.fw.v114` from the Galaxy Fold 3 firmware:
-```
-mov $03, 0x3
-or $12, $12, 0x20
-call #fxn1132 // there's a branch delay slot, so this isn't executed yet...
-cwrite $03, [$00 + @IB_LEVEL]
-```
-
-But A7xx now has RB, IB1, IB2, IB3, or SDS.
-`CP_SET_DRAW_STATE` now sets IB level to 0x4:
-```
-mov $03, 0x4
-cwrite $03, [$00 + @IB_LEVEL]
-```
-
-0x4 & 0x3 = 0x0. 
-
-https://cs.android.com/android/platform/superproject/main/+/main:external/mesa3d/src/freedreno/registers/adreno/adreno_control_regs.xml;l=327;drc=c0867f48117dc2c18b1ae689235cb1f60b237600
-
-So code checking the current IB level will think SDS (set draw state) is RB (kernel ring buffer), and commands such as `CP_SMMU_TABLE_UPDATE` will allow execution.
+- [zhuowei/cheese](https://github.com/zhuowei/cheese) — оригинальный PoC
+- [FreeXR](https://github.com/FreeXR/eureka_panther-adreno-gpu-exploit-1) — улучшенная версия
+- Project Zero — Adrenaline
+- Freedreno — регистры Adreno GPU
