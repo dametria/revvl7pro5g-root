@@ -74,6 +74,22 @@ uid=0(root) gid=0(root) groups=0(root) context=u:r:shell:s0
 - **НЕ ИСПОЛЬЗОВАТЬ** Magisk "Install" кнопку — BRICK
 - `CHEESE_ATTEMPT` и `CHEESE_PHYADDR` не деструктивны — можно пробовать многократно
 
+## Research Dump
+
+В директории [`research/`](research/) — публичные материалы для изучения устройства другими исследователями:
+
+| Категория | Содержание |
+|-----------|-----------|
+| **firmware/** | GPU SQE (V046+V016), GMU, kernel config, cmdline, SELinux policy |
+| **dumps/** | Таблица разделов, OEM-команды, UEFI-конфиг, сборка, SoC-параметры |
+| **docs/** | Механика эксплойта, анализ GPU firmware, UEFI/ABL/fastboot разбор |
+
+**Ключевые находки:**
+- **GPU firmware V046** — уязвим (`and $xx,$12,0x3`), V016 полностью патч (`0x3→0x7` + доп. hardening)
+- **UEFI идентичен** между V046 и V016 — `EnableShell=0x1`, `AllowNonPersistentVarsInRetail=0x1`
+- **ABL зашифрован** в покое, 88% различается между V046 и V016
+- **Ядро:** 5.10.209 (V046) → 5.10.236 (V016), 245 модулей, без GKI, eBPF JIT включён
+
 ## Благодарности
 
 - [zhuowei/cheese](https://github.com/zhuowei/cheese) — оригинальный PoC
