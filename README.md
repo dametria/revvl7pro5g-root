@@ -16,9 +16,9 @@
 
 ## Как работает
 
-CVE-2025-21479 (июнь 2025, Qualcomm). Adreno A7xx firmware баг: `CP_SET_DRAW_STATE` устанавливает IB_LEVEL=4 (SDS). Привилегированная команда `CP_SMMU_TABLE_UPDATE` проверяет `IB_LEVEL & 0x3 == 0`. **4 & 3 = 0 → bypass!**
+CVE-2025-21479 (июнь 2025, Qualcomm). Adreno A7xx firmware баг: `CP_SET_DRAW_STATE` устанавливает IB_LEVEL=4 (SDS). Привилегированная команда `CP_SMMU_T[...]
 
-GPU firmware думает что команда из kernel ring buffer (уровень 0), разрешает изменение SMMU page tables → arbitrary physical memory read/write → kernel memory patch → root.
+GPU firmware думает что команда из kernel ring buffer (уровень 0), разрешает изменение SMMU page tables → arbitrary physical memory read/write → kern[...]
 
 ## Сборка
 
